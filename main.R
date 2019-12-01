@@ -6,18 +6,22 @@
 graphics.off();cat("\014");rm(list=ls());options(warn=-1)
 
 # Directory path tuning and libraries loading:
-path <- "C:/..."
+path <- "D:/Google Drive/Recherche/Publications/Conferences/LFA 2019/experiments"
 setwd(path)
 library(rpart); library(rpart.plot); library(caret); library(xlsx); 
 library(ggpubr); library(MASS); source("myLib.R")
 
 # INPUTS:
-datasetNames <- c("banknote", "mammo", "pima", "ticTacToe") # from c("banana", "bankLoan", "banknote", "mammo", "pima", "ticTacToe")
-cps          <- c(0, 0.001, 0.005, 0.01, 0.05) # seq(from = 0, to = 1, by = 0.5)
-nRuns        <- 100
-nFold        <- 4
-granUncEval  <- 2 # granularity of the search in the unertain predictive probability interval [p1Inf, p1Sup], i.e. number of considered points
-inputs       <- list(datasetNames=datasetNames, cps=cps, nRuns=nRuns, nFold=nFold)
+# c("banana", "banknote", "credCardDef", "magic", "mammo", "mushrooms", "pima", "ticTacToe", "wisconsin")
+# c("banana", "bankLoan", "banknote", "mammo", "pima", "ticTacToe")
+
+datasetNames  <- c("banana", "banknote")
+cps           <- c(0, 0.001, 0.005, 0.01, 0.05) # seq(from = 0, to = 1, by = 0.5)
+nRuns         <- 5
+nFold         <- 3
+granUncEval   <- 10 # granularity of the search in the unertain predictive probability interval [p1Inf, p1Sup], i.e. number of considered points
+uncertainEval <- F
+inputs        <- list(datasetNames=datasetNames, cps=cps, nRuns=nRuns, nFold=nFold, uncertainEval=uncertainEval)
 
 # RUNS:
 logLossResults    <- list(); brierResults      <- list(); aucResults     <- list()
@@ -187,12 +191,21 @@ finalResults <- list(logLoss=logLossResults, logLossInf=logLossInfResults, logLo
                      AUC=aucResults,         AUCInf=aucInfResults,         AUCSup=aucSupResults)
 
 boxplots <- plotResults(inputs, finalResults)
-ggarrange(boxplots$logLoss$banana, boxplots$logLoss$bankLoan, boxplots$logLoss$banknote, 
-          boxplots$logLoss$mammo, boxplots$logLoss$pima, boxplots$logLoss$ticTacToe, ncol = 3, nrow = 2)
+# ggarrange(boxplots$logLoss$mammo, boxplots$logLoss$ticTacToe, ncol = 2, nrow = 1)
+# ggarrange(boxplots[[1]][[1]], boxplots[[1]][[2]], 
+#           boxplots[[2]][[1]], boxplots[[2]][[2]],
+#           boxplots[[3]][[1]], boxplots[[3]][[2]], 
+#           ncol = length(boxplots[[1]]), nrow = length(boxplots))
+# for (ievalIndex in 1 : 3){
+#   ggarrange(boxplots[[ievalIndex]][[1]], boxplots[[ievalIndex]][[2]],
+#             ncol = length(boxplots[[1]]), nrow = 1)
+# }
 
 # p+ geom_errorbar(aes(ymin = c(0.35, 0.35, 0.25, 0.25, 0.33, 0.33, 0.31, 0.31, 0.37, 0.37, 0.37, 0.37, 0.32, 0.32, 0.31, 0.31),
 #                      ymax = c(0.45, 0.45, 0.35, 0.35, 0.43, 0.43, 0.41, 0.41, 0.47, 0.47, 0.47, 0.47, 0.42, 0.42, 0.41, 0.41),
 #                  width = 0.2))
 
-
+ggarrange(boxplots$logLoss$banana, boxplots$brier$banana, boxplots$AUC$banana, 
+          boxplots$logLoss$banknote, boxplots$brier$banknote, boxplots$AUC$banknote, 
+          ncol = 3, nrow = 2, common.legend=T)
 

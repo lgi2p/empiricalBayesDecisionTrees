@@ -52,6 +52,7 @@ predictProb <- function(trees, validationSet){
 plotResults <- function(inputs, results){
   
   evalIndexes  <- names(results)[!grepl("nf", names(results)) & !grepl("up", names(results))]
+  # uncertEvalIndexes  <- names(results)[grepl("nf", names(results))|grepl("up", names(results))]
   datasetNames <- names(results[[1]])
   models       <- names(results[[1]][[1]])
   boxplots     <- list()
@@ -62,37 +63,54 @@ plotResults <- function(inputs, results){
                           colMeans(results[[paste0(evalIndex, "Sup")]][[datasetName]]))
       row.names(uncertEval) <- c("inf", "sup")
       uncertEval <- as.data.frame(uncertEval)
-      p <- myBoxplot(preciseResults,evalIndex, datasetName) + ggtitle(datasetName) + labs(x="", y = "", cex=0.8)+
-      labs(x="cp", y = evalIndex, cex=0.8) 
-      # for (model in names(uncertEval)){
-      #   p <- p + geom_segment(aes(x = model, y = uncertEval['inf', model], 
-      #                             xend = model, yend = uncertEval['sup', model]), color = 'blue')
-      # }
-      
-      # p <- p +
-      #   geom_segment(aes(x = "0", y = uncertEval['inf', "0"],
-      #                            xend = "0", yend = uncertEval['sup', "0"]), color = 'blue') +
-      #   geom_segment(aes(x = "0.001", y = uncertEval['inf', "0.001"],
-      #                    xend = "0.001", yend = uncertEval['sup', "0.001"]), color = 'blue') +
-      #   geom_segment(aes(x = "0.005", y = uncertEval['inf', "0.005"],
-      #                    xend = "0.005", yend = uncertEval['sup', "0.005"]), color = 'blue') +
-      #   geom_segment(aes(x = "0.01", y = uncertEval['inf', "0.01"],
-      #                    xend = "0.01", yend = uncertEval['sup', "0.01"]), color = 'blue') +
-      #   geom_segment(aes(x = "0.05", y = uncertEval['inf', "0.05"],
-      #                    xend = "0.05", yend = uncertEval['sup', "0.05"]), color = 'blue') +
-      #   geom_segment(aes(x = "pruned", y = uncertEval['inf', "pruned"],
-      #                     xend = "pruned", yend = uncertEval['sup', "pruned"]), color = 'blue')
+      p <- myBoxplot(preciseResults, evalIndex, datasetName) + ggtitle(datasetName) + labs(x="", y = "", cex=0.8)+
+      labs(x="", y = "", cex=0.8) 
+      if (inputs$uncertainEval){
+        for (model in names(uncertEval)){
+          p <- p + geom_segment(aes(x = model, y = uncertEval['inf', model],
+                                    xend = model, yend = uncertEval['sup', model]), color = 'blue')
+        }
+        p <- p +
+          geom_segment(aes(x = "0", y = uncertEval['inf', "0"],
+                           xend = "0", yend = uncertEval['sup', "0"]), color = 'blue') +
+          geom_segment(aes(x = "0.005", y = uncertEval['inf', "0.005"],
+                           xend = "0.005", yend = uncertEval['sup', "0.005"]), color = 'blue') +
+          geom_segment(aes(x = "0.01", y = uncertEval['inf', "0.01"],
+                           xend = "0.01", yend = uncertEval['sup', "0.01"]), color = 'blue') +
+          geom_segment(aes(x = "pruned", y = uncertEval['inf', "pruned"],
+                           xend = "pruned", yend = uncertEval['sup', "pruned"]), color = 'blue')
+      }
       boxplots[[evalIndex]][[datasetName]] <- p
     }
   }
   
   for (iEvalIndex in 1 : length(evalIndexes)){
     evalIndex <- evalIndexes[iEvalIndex]
+    str <- paste0("boxplots", evalIndex, " <- ggarrange(")
     for (iDataset in 1 : length(datasetNames)){
-      datasetName <- datasetNames[iDataset]
-      p <- boxplots[[evalIndex]][[datasetName]]
-      ggsave(paste0("./results/", evalIndex, datasetName, gsub(":", "_", paste0(Sys.time())), ".png"), p) 
+      str <- paste0(str, "boxplots[[", iEvalIndex, "]][[", iDataset, "]],")
     }
+    if (length(datasetNames) <= 2){
+      str <- paste0(str, "ncol=2, nrow = 1)")
+    } else {
+      if (length(datasetNames) <= 4){
+        str <- paste0(str, "ncol=2, nrow = 2)")
+      } else {
+        if (length(datasetNames) <= 6){
+          str <- paste0(str, "ncol=2, nrow = 3)")
+        } else if (length(datasetNames) <= 9){
+          str <- paste0(str, "ncol=3, nrow = 3)")
+        }
+      }
+    }
+    str <- paste0(str, "; boxplots", evalIndex, "<- annotate_figure(boxplots", evalIndex, ", top = text_grob('", evalIndex,
+                  "', color = 'blueviolet', face = 'bold', size = 20))")
+    
+    eval(parse(text = str))
+    # eval(parse(text = str2))
+    eval(parse(text = paste0("ggsave(paste0('./results/boxplots", evalIndex, 
+                             "', gsub(':', '_', paste0(Sys.time())), '.png'), boxplots",
+                             evalIndex, ", width = 23, height = 10, units = 'cm')")))
   }
   
   # Mean results (1 result per eval index and per dataset) computation:
@@ -164,7 +182,7 @@ myBoxplot <- function(df, evalIndex, datasetName){
     if (grepl("EB", as.character(df3$model[i]))){
       df3$type[i] <- "EB"
     } else {
-      df3$type[i] <- "classique"
+      df3$type[i] <- "original"
     }
   }
   # df3$type <- c("original", "EB")[grep("EB", as.character(df3$model))]
@@ -172,7 +190,7 @@ myBoxplot <- function(df, evalIndex, datasetName){
   
   boxplot <- ggplot(df3, aes(x=cp, y=eval, color=type)) + 
     # geom_violin() + 
-    geom_boxplot(width=0.5) +
+    geom_boxplot(width=0.1) +
     # ggtitle(datasetName) +
     # labs(x="", y = "aaa", cex=0.8) +
     bgcolor("#BFD5E3") +
