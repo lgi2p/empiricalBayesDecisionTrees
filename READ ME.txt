@@ -11,6 +11,6 @@ This codes contain 3 R files and 1 archive:
 For the 'main.R' script:
 
 	* on line 9 specify the correct current path (containing your library and data).
-
-	* create a folder named 'results' in the current directory for plots and xls results savings
+	* unzip the datasets file and make it sure it is located in the current directory.
+	* create a folder named 'results' in the current directory for plots and xls results savings.
 
