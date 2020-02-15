@@ -1,0 +1,16 @@
+This codes contain 3 R files and 1 archive:
+
+-EBcorrDTexample.R: simple detailed example of Empirical Bayes correction for decision tree predictions
+
+-main.R: main script to run for experiments
+
+-myLib.R:library of R function for Empirical Bayes decision trees
+
+-datasets.zip: the archive containing the 6 datasets
+
+For the 'main.R' script:
+
+	* on line 9 specify the correct current path (containing your library and data).
+
+	* create a folder named 'results' in the current directory for plots and xls results savings
+
